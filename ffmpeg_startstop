@@ -1,0 +1,51 @@
+#!/bin/bash
+
+while getopts "b:hi:o:s:z:" opt; do
+  case "$opt" in
+    b)
+      begin=$OPTARG
+      ;;
+    h)
+      echo -e '-b flag is start time - either 00:01:00 or 60 is valid \n-s flag is stop time\n-i flag is input file\n-o flag is output file\n-z flag for extra ffmpeg options - between single quotes'
+      exit
+      ;;
+    i)
+      input_file=$OPTARG
+      ;;
+    o)
+      output_file=$OPTARG
+      ;;
+    s)
+      stop=$OPTARG
+      ;;
+    z)
+      options="$OPTARG"
+      ;;
+  esac
+done
+
+begin=${begin:-0}
+stop=${stop:-0}
+
+
+converter() {
+  if [ $(echo $1 | grep \:) ]
+    then
+      hour_to_sec=$(($(cut -d\: -f1 <<<"$1") * 60 * 60))
+      min_to_sec=$(($(cut -d\: -f2 <<<"$1") * 60))
+      sec=$(($(cut -d\: -f3 <<<"$1") + $min_to_sec + $hour_to_sec))
+      echo $sec
+    else
+      sec=$1
+      echo $sec
+  fi
+}
+
+offset="$(( $(converter $stop) - $(converter $begin) ))"
+if [ $offset -lt 0 ]
+  then
+    echo 'end time is before begin time - exiting'
+    exit 1
+fi
+
+ffmpeg -i "$input_file" -ss "$begin" -t "$offset" $options "$output_file"
