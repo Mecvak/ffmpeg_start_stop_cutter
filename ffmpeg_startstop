@@ -1,22 +1,22 @@
 #!/bin/bash
 
-while getopts "b:hi:o:s:z:" opt; do
+while getopts "b:e:hi:o:s:z:" opt; do
   case "$opt" in
     b)
-      begin=$OPTARG
+      begin="$OPTARG"
+      ;;
+    e)
+      end="$OPTARG"
+      ;;
+    o)
+      output_file="$OPTARG"
       ;;
     h)
-      echo -e '-b flag is start time - either 00:01:00 or 60 is valid \n-s flag is stop time\n-i flag is input file\n-o flag is output file\n-z flag for extra ffmpeg options - between single quotes'
+      echo -e '-b flag is start time - either 00:01:00 or 60 is valid \n-e flag is end time\n-i flag is input file\n-o flag is output file\n-z flag for extra ffmpeg options - between single quotes'
       exit
       ;;
     i)
-      input_file=$OPTARG
-      ;;
-    o)
-      output_file=$OPTARG
-      ;;
-    s)
-      stop=$OPTARG
+      input_file="$OPTARG"
       ;;
     z)
       options="$OPTARG"
@@ -25,15 +25,17 @@ while getopts "b:hi:o:s:z:" opt; do
 done
 
 begin=${begin:-0}
-stop=${stop:-0}
+end=${end:-0}
 
 
 converter() {
-  if [ $(echo $1 | grep \:) ]
+  if [ $(echo "$1" | grep \:) ]
     then
-      hour_to_sec=$(($(cut -d\: -f1 <<<"$1") * 60 * 60))
-      min_to_sec=$(($(cut -d\: -f2 <<<"$1") * 60))
-      sec=$(($(cut -d\: -f3 <<<"$1") + $min_to_sec + $hour_to_sec))
+      hour_to_sec="$((10#$(cut -d\: -f1 <<<"$1") * 60 * 60))"
+set -xv
+      min_to_sec="$((10#$(cut -d\: -f2 <<<"$1") * 60))"
+set +xv
+      sec="$((10#$(cut -d\: -f3 <<<"$1") + $min_to_sec + $hour_to_sec))"
       echo $sec
     else
       sec=$1
@@ -41,7 +43,8 @@ converter() {
   fi
 }
 
-offset="$(( $(converter $stop) - $(converter $begin) ))"
+echo "$(converter $end)-$(converter $begin)))"
+offset="$(($(converter $end)-$(converter $begin)))"
 if [ $offset -lt 0 ]
   then
     echo 'end time is before begin time - exiting'
